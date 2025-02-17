@@ -11,8 +11,8 @@ function App() {
   const [count, setCount] = useState(0);
   useEffect(() => {
     async function run() {
-      const result = await client.hello.$get();
-      console.log("api result", result);
+      const customersResult = await client.customers.$get();
+      console.log("customersResult", await customersResult.json());
     }
     run();
   }, []);
