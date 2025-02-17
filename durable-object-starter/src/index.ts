@@ -1,5 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { Hono } from 'hono';
+import { drizzle } from 'drizzle-orm/d1';
+import { usersTable } from './db/schema';
 
 export class MyDurableObject extends DurableObject<Env> {
 	constructor(ctx: DurableObjectState, env: Env) {
@@ -29,9 +31,10 @@ const routes = app
 	.get('/hello', async (c) => {
 		return c.text('hello world');
 	})
-	.get('/customers', async (c) => {
-		const result = await c.env.DB.prepare('SELECT * FROM Customers').all();
-		return c.json(result);
+	.get('/users', async (c) => {
+		const db = drizzle(c.env.DB);
+		const users = await db.select().from(usersTable).all();
+		return c.json(users);
 	});
 export default app;
 

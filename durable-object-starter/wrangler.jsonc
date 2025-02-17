@@ -28,7 +28,8 @@
 		{
 			"binding": "DB",
 			"database_name": "cloudflare-app-d1-db",
-			"database_id": "026d514e-441f-4d4c-bf53-b32cf8f9a11f"
+			"database_id": "026d514e-441f-4d4c-bf53-b32cf8f9a11f",
+			"migrations_dir": "drizzle"
 		}
 	]
 	/**
