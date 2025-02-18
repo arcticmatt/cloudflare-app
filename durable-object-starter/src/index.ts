@@ -1,7 +1,14 @@
 import { DurableObject } from 'cloudflare:workers';
 import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
-import { usersTable } from './db/schema';
+import { eq } from 'drizzle-orm';
+import { sessionsTable, usersTable } from './db/schema';
+import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
+import { getCookie, setCookie } from 'hono/cookie';
+import { cors } from 'hono/cors';
+import { hashPassword, verifyPassword } from './utils/password-hash';
+import { login, me, register } from './routes/auth';
 
 export class MyDurableObject extends DurableObject<Env> {
 	constructor(ctx: DurableObjectState, env: Env) {
@@ -15,12 +22,16 @@ export class MyDurableObject extends DurableObject<Env> {
 }
 
 const app = new Hono<{ Bindings: Env }>();
+app.use(
+	'*',
+	cors({
+		// TODO: need to make it work for prod
+		origin: 'http://localhost:5173',
+		credentials: true,
+	})
+);
 
 const routes = app
-	.use('*', async (c, next) => {
-		c.res.headers.set('Access-Control-Allow-Origin', '*');
-		await next();
-	})
 	// .get('*', async (c) => {
 	// 	const id: DurableObjectId = c.env.MY_DURABLE_OBJECT.idFromName(new URL(c.req.url).pathname);
 	// 	const stub = c.env.MY_DURABLE_OBJECT.get(id);
@@ -35,7 +46,10 @@ const routes = app
 		const db = drizzle(c.env.DB);
 		const users = await db.select().from(usersTable).all();
 		return c.json(users);
-	});
-export default app;
+	})
+	.route('/', register)
+	.route('/', login)
+	.route('/', me);
 
+export default app;
 export type AppType = typeof routes;
