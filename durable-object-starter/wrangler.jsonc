@@ -31,7 +31,24 @@
 			"database_id": "026d514e-441f-4d4c-bf53-b32cf8f9a11f",
 			"migrations_dir": "drizzle"
 		}
-	]
+	],
+	"vars": {
+		"CORS_ORIGIN": "http://localhost:5173",
+		"ENVIRONMENT": "dev"
+	},
+	"env": {
+		"staging": {
+			"vars": {
+				"ENVIRONMENT": "staging"
+			}
+		},
+		"production": {
+			"vars": {
+				"CORS_ORIGIN": "cloudflare-app-5gj.pages.dev",
+				"ENVIRONMENT": "production"
+			}
+		}
+	}
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

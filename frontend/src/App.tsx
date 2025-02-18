@@ -10,7 +10,7 @@ import {
 } from "react-router";
 import invariant from "tiny-invariant";
 
-const client = hc<AppType>("http://localhost:8787/", {
+const client = hc<AppType>(import.meta.env.VITE_SERVER_URL, {
   init: {
     credentials: "include",
   },

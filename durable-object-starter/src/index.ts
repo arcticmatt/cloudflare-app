@@ -25,8 +25,7 @@ const app = new Hono<{ Bindings: Env }>();
 app.use(
 	'*',
 	cors({
-		// TODO: need to make it work for prod
-		origin: 'http://localhost:5173',
+		origin: (_origin, c) => c.env.CORS_ORIGIN,
 		credentials: true,
 	})
 );
