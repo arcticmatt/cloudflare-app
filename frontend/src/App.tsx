@@ -173,6 +173,10 @@ const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
+    path: "/hello",
+    element: <div>Hello world!</div>,
+  },
+  {
     path: "*",
     element: <Navigate to="/" />,
   },
