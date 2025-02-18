@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { getCookie, setCookie } from 'hono/cookie';
 import { cors } from 'hono/cors';
 import { hashPassword, verifyPassword } from './utils/password-hash';
-import { login, me, register } from './routes/auth';
+import { login, logout, me, register } from './routes/auth';
 
 export class MyDurableObject extends DurableObject<Env> {
 	constructor(ctx: DurableObjectState, env: Env) {
@@ -47,9 +47,10 @@ const routes = app
 		const users = await db.select().from(usersTable).all();
 		return c.json(users);
 	})
-	.route('/', register)
-	.route('/', login)
-	.route('/', me);
+	.route('/register', register)
+	.route('/login', login)
+	.route('/me', me)
+	.route('/logout', logout);
 
 export default app;
 export type AppType = typeof routes;

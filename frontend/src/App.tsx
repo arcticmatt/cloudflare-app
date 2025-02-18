@@ -10,9 +10,13 @@ import {
 } from "react-router";
 import invariant from "tiny-invariant";
 
-const client = hc<AppType>("http://localhost:8787/");
+const client = hc<AppType>("http://localhost:8787/", {
+  init: {
+    credentials: "include",
+  },
+});
 
-type ExtractFirstArg<T> = T extends ClientResponse<infer U, any, any>
+type ExtractFirstArg<T> = T extends ClientResponse<infer U, number, string>
   ? U
   : never;
 type User = Exclude<
@@ -26,16 +30,8 @@ function useMe(shouldNavigate: boolean = true) {
 
   useEffect(() => {
     async function checkAuth() {
-      const meResult = await client.me.$get(
-        {},
-        {
-          init: {
-            credentials: "include",
-          },
-        }
-      );
+      const meResult = await client.me.$get();
       const userData = await meResult.json();
-      console.log("userData", userData);
       if (!userData || "error" in userData) {
         setUser(null);
         if (shouldNavigate) {
@@ -69,37 +65,22 @@ function LoginPage() {
     e.preventDefault();
     try {
       if (isLogin) {
-        const result = await client.login.$post(
-          {
-            json: { email, password },
-          },
-          {
-            init: {
-              credentials: "include",
-            },
-          }
-        );
-        console.log("result", result);
+        const result = await client.login.$post({
+          json: { email, password },
+        });
         if (!result.ok) {
           const error = await result.json();
           invariant("error" in error);
           throw new Error(error.error || "Login failed");
         }
       } else {
-        const result = await client.register.$post(
-          {
-            json: {
-              email,
-              password,
-              name,
-            },
+        const result = await client.register.$post({
+          json: {
+            email,
+            password,
+            name,
           },
-          {
-            init: {
-              credentials: "include",
-            },
-          }
-        );
+        });
         if (!result.ok) {
           const error = await result.json();
           invariant("error" in error);
@@ -108,7 +89,6 @@ function LoginPage() {
       }
       navigate("/");
     } catch (err) {
-      console.log("error caught", err);
       setError(err instanceof Error ? err.message : "An error occurred");
     }
   }
@@ -165,11 +145,19 @@ function HomePage() {
   const user = useMe();
   if (!user) return null;
 
+  const handleLogout = async () => {
+    await client.logout.$post();
+    window.location.reload();
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.welcomeContainer}>
         <h1 className={styles.welcomeTitle}>Welcome, {user.name}!</h1>
         <p className={styles.userEmail}>Email: {user.email}</p>
+        <button onClick={handleLogout} className={styles.button}>
+          Logout
+        </button>
       </div>
     </div>
   );

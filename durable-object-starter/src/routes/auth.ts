@@ -4,15 +4,11 @@ import { eq } from 'drizzle-orm';
 import { sessionsTable, usersTable } from '../db/schema';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { getCookie, setCookie } from 'hono/cookie';
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { hashPassword, verifyPassword } from '../utils/password-hash';
 
-const login = new Hono<{ Bindings: Env }>();
-const register = new Hono<{ Bindings: Env }>();
-const me = new Hono<{ Bindings: Env }>();
-
-register.post(
-	'/register',
+export const register = new Hono<{ Bindings: Env }>().post(
+	'/',
 	zValidator(
 		'json',
 		z.object({
@@ -25,64 +21,59 @@ register.post(
 		const { email, password, name } = await c.req.json();
 
 		if (!email || !password || !name) {
-			return c.json({ error: 'Missing required fields' }, 400);
+			return c.json({ error: 'Missing required fields' }, 401);
 		}
 
-		try {
-			const db = drizzle(c.env.DB);
+		const db = drizzle(c.env.DB);
 
-			// Check if user already exists
-			const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
+		// Check if user already exists
+		const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
 
-			if (existingUser) {
-				return c.json({ error: 'User already exists' }, 400);
-			}
-
-			// Hash password before storing
-			const hashedPassword = await hashPassword(password);
-
-			// Insert new user
-			const result = await db
-				.insert(usersTable)
-				.values({
-					email,
-					name,
-					password: hashedPassword,
-				})
-				.returning();
-
-			const user = result[0];
-
-			// Create session
-			const expiresAt = new Date();
-			expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
-
-			const sessionToken = crypto.randomUUID();
-
-			await db.insert(sessionsTable).values({
-				userId: user.id,
-				token: sessionToken,
-				// TODO: need to actually implement expiry
-				expiresAt: expiresAt.toISOString(),
-			});
-
-			setCookie(c, 'session', sessionToken, {
-				httpOnly: true,
-				secure: true,
-				sameSite: 'None',
-				expires: expiresAt,
-			});
-
-			return c.json({ message: 'User registered successfully' });
-		} catch (error) {
-			console.error('registration failed', error);
-			return c.json({ error: 'Registration failed' }, 500);
+		if (existingUser) {
+			return c.json({ error: 'User already exists' }, 400);
 		}
+
+		// Hash password before storing
+		const hashedPassword = await hashPassword(password);
+
+		// Insert new user
+		const result = await db
+			.insert(usersTable)
+			.values({
+				email,
+				name,
+				password: hashedPassword,
+			})
+			.returning();
+
+		const user = result[0];
+
+		// Create session
+		const expiresAt = new Date();
+		expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+
+		const sessionToken = crypto.randomUUID();
+
+		await db.insert(sessionsTable).values({
+			userId: user.id,
+			token: sessionToken,
+			// TODO: need to actually implement expiry
+			expiresAt: expiresAt.toISOString(),
+		});
+
+		setCookie(c, 'session', sessionToken, {
+			httpOnly: true,
+			secure: true,
+			sameSite: 'None',
+			expires: expiresAt,
+		});
+
+		return c.json({ message: 'User registered successfully' });
 	}
 );
 
-login.post(
-	'/login',
+export const login = new Hono<{ Bindings: Env }>().post(
+	'/',
 	zValidator(
 		'json',
 		z.object({
@@ -97,77 +88,79 @@ login.post(
 			return c.json({ error: 'Email and password are required' }, 400);
 		}
 
-		try {
-			const db = drizzle(c.env.DB);
+		const db = drizzle(c.env.DB);
 
-			// Find user by email
-			const user = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
+		// Find user by email
+		const user = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
 
-			if (!user) {
-				return c.json({ error: 'User not found' }, 404);
-			}
-
-			// Verify password
-			const isValid = await verifyPassword(password, user.password!);
-
-			if (!isValid) {
-				return c.json({ error: 'Invalid password' }, 401);
-			}
-
-			// Create session
-			const expiresAt = new Date();
-			expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
-
-			const sessionToken = crypto.randomUUID();
-
-			await db.insert(sessionsTable).values({
-				userId: user.id,
-				token: sessionToken,
-				// TODO: need to actually implement expiry
-				expiresAt: expiresAt.toISOString(),
-			});
-
-			setCookie(c, 'session', sessionToken, {
-				httpOnly: true,
-				secure: true,
-				sameSite: 'None',
-				expires: expiresAt,
-			});
-
-			return c.json({ message: 'Login successful' });
-		} catch (error) {
-			return c.json({ error: 'Login failed' }, 500);
+		if (!user) {
+			return c.json({ error: 'User not found' }, 404);
 		}
+
+		// Verify password
+		const isValid = await verifyPassword(password, user.password!);
+
+		if (!isValid) {
+			return c.json({ error: 'Invalid password' }, 401);
+		}
+
+		// Create session
+		const expiresAt = new Date();
+		expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+
+		const sessionToken = crypto.randomUUID();
+
+		await db.insert(sessionsTable).values({
+			userId: user.id,
+			token: sessionToken,
+			// TODO: need to actually implement expiry
+			expiresAt: expiresAt.toISOString(),
+		});
+
+		setCookie(c, 'session', sessionToken, {
+			httpOnly: true,
+			secure: true,
+			sameSite: 'None',
+			expires: expiresAt,
+		});
+
+		return c.json({ message: 'Login successful' });
 	}
 );
 
-me.get('/me', async (c) => {
-	try {
-		const sessionToken = getCookie(c, 'session');
-		console.log('sessionToken', sessionToken);
-		if (!sessionToken) {
-			return c.json(null);
-		}
-
-		const db = drizzle(c.env.DB);
-		const session = await db.select().from(sessionsTable).where(eq(sessionsTable.token, sessionToken)).get();
-
-		if (!session) {
-			return c.json(null);
-		}
-
-		const user = await db.select().from(usersTable).where(eq(usersTable.id, session.userId)).get();
-
-		if (!user) {
-			return c.json(null);
-		}
-
-		// Don't return password hash
-		const { password, ...userWithoutPassword } = user;
-		return c.json(userWithoutPassword);
-	} catch (error) {
-		return c.json({ error: 'Failed to get user' }, 500);
+export const me = new Hono<{ Bindings: Env }>().get(async (c) => {
+	const sessionToken = getCookie(c, 'session');
+	if (!sessionToken) {
+		return c.json(null);
 	}
+
+	const db = drizzle(c.env.DB);
+	const session = await db.select().from(sessionsTable).where(eq(sessionsTable.token, sessionToken)).get();
+
+	if (!session) {
+		return c.json(null);
+	}
+
+	const user = await db.select().from(usersTable).where(eq(usersTable.id, session.userId)).get();
+
+	if (!user) {
+		return c.json(null);
+	}
+
+	// Don't return password hash
+	const { password, ...userWithoutPassword } = user;
+	return c.json(userWithoutPassword);
 });
 
-export { register, login, me };
+export const logout = new Hono<{ Bindings: Env }>().post(async (c) => {
+	const sessionToken = getCookie(c, 'session');
+	if (!sessionToken) {
+		return c.json({ message: 'Already logged out' });
+	}
+
+	const db = drizzle(c.env.DB);
+	await db.delete(sessionsTable).where(eq(sessionsTable.token, sessionToken));
+	deleteCookie(c, 'session');
+
+	return c.json({ message: 'Logout successful' });
+});
