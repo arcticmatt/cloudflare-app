@@ -44,7 +44,7 @@
 		},
 		"production": {
 			"vars": {
-				"CORS_ORIGIN": "cloudflare-app-5gj.pages.dev",
+				"CORS_ORIGIN": "https://cloudflare-app-5gj.pages.dev",
 				"ENVIRONMENT": "production"
 			}
 		}
