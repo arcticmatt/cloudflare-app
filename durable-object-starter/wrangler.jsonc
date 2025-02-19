@@ -32,6 +32,12 @@
 			"migrations_dir": "drizzle"
 		}
 	],
+	"r2_buckets": [
+		{
+			"binding": "BUCKET",
+			"bucket_name": "cloudflare-app-r2-bucket"
+		}
+	],
 	"vars": {
 		"CORS_ORIGIN": "http://localhost:5173",
 		"ENVIRONMENT": "dev"

@@ -9,8 +9,10 @@ import {
   useNavigate,
 } from "react-router";
 import invariant from "tiny-invariant";
+import { SERVER_URL } from "./constants/server-url";
+import { UploadProfilePhoto } from "./upload-profile-photo";
 
-const client = hc<AppType>(import.meta.env.VITE_SERVER_URL, {
+const client = hc<AppType>(SERVER_URL, {
   init: {
     credentials: "include",
   },
@@ -155,6 +157,9 @@ function HomePage() {
       <div className={styles.welcomeContainer}>
         <h1 className={styles.welcomeTitle}>Welcome, {user.name}!</h1>
         <p className={styles.userEmail}>Email: {user.email}</p>
+        <div className={styles.profileSection}>
+          <UploadProfilePhoto />
+        </div>
         <button onClick={handleLogout} className={styles.button}>
           Logout
         </button>

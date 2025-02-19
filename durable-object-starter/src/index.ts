@@ -3,11 +3,8 @@ import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
 import { sessionsTable, usersTable } from './db/schema';
-import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
-import { getCookie, setCookie } from 'hono/cookie';
+import { getCookie } from 'hono/cookie';
 import { cors } from 'hono/cors';
-import { hashPassword, verifyPassword } from './utils/password-hash';
 import { login, logout, me, register } from './routes/auth';
 
 export class MyDurableObject extends DurableObject<Env> {
@@ -49,7 +46,61 @@ const routes = app
 	.route('/register', register)
 	.route('/login', login)
 	.route('/me', me)
-	.route('/logout', logout);
+	.route('/logout', logout)
+	.post('/uploadProfilePhoto', async (c) => {
+		const sessionToken = getCookie(c, 'session');
+		if (!sessionToken) {
+			console.log('no session token');
+			return c.json({ error: 'Unauthorized' }, 401);
+		}
+
+		const db = drizzle(c.env.DB);
+		const session = await db.select().from(sessionsTable).where(eq(sessionsTable.token, sessionToken)).get();
+		if (!session) {
+			console.log('no session found');
+			return c.json({ error: 'Unauthorized' }, 401);
+		}
+		const userId = session.userId;
+
+		const bucket = c.env.BUCKET;
+		const body = await c.req.parseBody();
+		const file = body['file'] as File;
+		const key = `profile-photos/${userId}`;
+		await bucket.put(key, file.stream(), {
+			httpMetadata: {
+				contentType: file.type,
+			},
+		});
+		return c.json({ key });
+	})
+	.get('/getProfilePhoto', async (c) => {
+		const sessionToken = getCookie(c, 'session');
+		if (!sessionToken) {
+			console.log('no session token');
+			return c.json({ error: 'Unauthorized' }, 401);
+		}
+
+		const db = drizzle(c.env.DB);
+		const session = await db.select().from(sessionsTable).where(eq(sessionsTable.token, sessionToken)).get();
+		if (!session) {
+			console.log('no session found');
+			return c.json({ error: 'Unauthorized' }, 401);
+		}
+
+		const bucket = c.env.BUCKET;
+		const key = `profile-photos/${session.userId}`;
+		const object = await bucket.get(key);
+
+		if (!object) {
+			return c.json({ error: 'Profile photo not found' }, 404);
+		}
+
+		return new Response(object.body, {
+			headers: {
+				'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+			},
+		});
+	});
 
 export default app;
 export type AppType = typeof routes;
