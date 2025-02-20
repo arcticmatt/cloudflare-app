@@ -39,21 +39,8 @@
 		}
 	],
 	"vars": {
-		"CORS_ORIGIN": "http://localhost:5173",
-		"ENVIRONMENT": "dev"
-	},
-	"env": {
-		"staging": {
-			"vars": {
-				"ENVIRONMENT": "staging"
-			}
-		},
-		"production": {
-			"vars": {
-				"CORS_ORIGIN": "https://cloudflare-app-5gj.pages.dev",
-				"ENVIRONMENT": "production"
-			}
-		}
+		"CORS_ORIGIN": "https://cloudflare-app-5gj.pages.dev",
+		"ENVIRONMENT": "production"
 	}
 	/**
 	 * Smart Placement

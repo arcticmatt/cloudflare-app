@@ -1,10 +1,8 @@
 import { DurableObject } from 'cloudflare:workers';
-import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
-import { eq } from 'drizzle-orm';
-import { sessionsTable, usersTable } from './db/schema';
-import { getCookie } from 'hono/cookie';
+import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { usersTable } from './db/schema';
 import { login, logout, me, register } from './routes/auth';
 import { requireAuth } from './utils/auth-utils';
 
