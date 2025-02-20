@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { SERVER_URL } from "./constants/server-url";
 import styles from "./upload-profile-photo.module.css";
 
-function useProfilePhoto() {
+function useProfilePhoto(isUploading: boolean) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +34,7 @@ function useProfilePhoto() {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isUploading]);
 
   return { photoUrl, loading };
 }
@@ -43,7 +43,7 @@ export function UploadProfilePhoto() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { photoUrl } = useProfilePhoto();
+  const { photoUrl } = useProfilePhoto(uploading);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
