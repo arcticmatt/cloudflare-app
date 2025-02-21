@@ -1,10 +1,10 @@
-import { Hono } from 'hono';
-import { drizzle } from 'drizzle-orm/d1';
-import { eq } from 'drizzle-orm';
-import { sessionsTable, usersTable } from '../db/schema';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
+import { eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/d1';
+import { Hono } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
+import { z } from 'zod';
+import { sessionsTable, usersTable } from '../db/schema';
 import { hashPassword, verifyPassword } from '../utils/password-hash';
 
 export const register = new Hono<{ Bindings: Env }>().post(
@@ -18,7 +18,7 @@ export const register = new Hono<{ Bindings: Env }>().post(
 		})
 	),
 	async (c) => {
-		const { email, password, name } = await c.req.json();
+		const { email, password, name } = await c.req.valid('json');
 
 		if (!email || !password || !name) {
 			return c.json({ error: 'Missing required fields' }, 401);
@@ -82,7 +82,7 @@ export const login = new Hono<{ Bindings: Env }>().post(
 		})
 	),
 	async (c) => {
-		const { email, password } = await c.req.json();
+		const { email, password } = await c.req.valid('json');
 
 		if (!email || !password) {
 			return c.json({ error: 'Email and password are required' }, 400);
